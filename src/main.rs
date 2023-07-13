@@ -6,6 +6,15 @@ use bevy::{
 use dotenv::dotenv;
 
 mod config;
+mod main_story_text;
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, States, Default)]
+enum GameState {
+    #[default]
+    Story,
+    Select,
+    Battle,
+}
 
 fn main() {
     dotenv().ok();
@@ -27,9 +36,13 @@ fn main() {
                     ..default()
                 }),
         )
+        .init_resource::<main_story_text::GlobalStoryText>()
+        .add_state::<GameState>()
         .add_plugin(FrameTimeDiagnosticsPlugin)
         .add_startup_system(setup)
-        .add_system(story_text_system)
+        // .add_system(story_text_system)
+        // .add_system(print_text_system)
+        .add_system(show_story_text.in_set(OnUpdate(GameState::Story)))
         .run();
 }
 
@@ -39,12 +52,13 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ..default()
     });
 
-    let font = asset_server.load("fonts/DungGeunMo.ttf");
-    let text_style = TextStyle {
+    let font = asset_server.load("fonts/DungGeunMo.TTf");
+    let text_style: TextStyle = TextStyle {
         font: font.clone(),
         font_size: 60.0,
         color: Color::WHITE,
     };
+    let box_size = Vec2::new(300.0, 200.0);
 
     commands
         .spawn(SpriteBundle {
@@ -63,8 +77,11 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             builder.spawn((
                 Text2dBundle {
                     text: Text {
-                        sections: vec![],
-                        alignment: TextAlignment::Center,
+                        sections: vec![TextSection::new(
+                            "this text wraps in the boxasca ksucashci uas cuibasck1",
+                            text_style.clone(),
+                        )],
+                        alignment: TextAlignment::Left,
                         linebreak_behaviour: BreakLineOn::WordBoundary,
                     },
                     text_2d_bounds: Text2dBounds {
@@ -73,57 +90,39 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                     transform: Transform::from_translation(Vec3::Z),
                     ..default()
                 },
-                StoryText,
+                StoryText {
+                    timer: Timer::from_seconds(config::TEXT_SPEED, TimerMode::Repeating),
+                    story_pointer: 0,
+                },
             ));
         });
 }
 
 #[derive(Component)]
-struct StoryText;
+struct StoryText {
+    timer: Timer,
+    story_pointer: i64,
+}
 
-fn story_text_system(time: Res<Time>, mut query: Query<(&mut Text, With<StoryText>)>) {
-    let story: String = "이건 나의 몫이고 저건 너의 몫이다".to_string();
-    for text in &mut query {
-        let seconds = time.elapsed_seconds();
-        println!("{}", seconds);
+fn show_story_text(
+    story: Res<main_story_text::GlobalStoryText>,
+    buttons: Res<Input<MouseButton>>,
+    game_state: Res<State<GameState>>,
+    mut query: Query<(&mut Text, With<StoryText>)>,
+) {
+    for mut text in &mut query {
+        if buttons.just_pressed(MouseButton::Left) {
+            println!("as")
+        }
+        // text.timer.tick(time.delta());
+
+        // if text.timer.just_finished() {
+        //     println!("Hello");
+        // }
     }
 }
 
-// let button_entity = commands
-//     .spawn(NodeBundle {
-//         style: Style {
-//             // center button
-//             size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-//             justify_content: JustifyContent::Center,
-//             align_items: AlignItems::Center,
-//             ..default()
-//         },
-//         ..default()
-//     })
-//     .with_children(|parent| {
-//         parent
-//             .spawn(ButtonBundle {
-//                 style: Style {
-//                     size: Size::new(Val::Px(150.0), Val::Px(65.0)),
-//                     // horizontally center child text
-//                     justify_content: JustifyContent::Center,
-//                     // vertically center child text
-//                     align_items: AlignItems::Center,
-//                     ..default()
-//                 },
-//                 background_color: Color::rgb(0.15, 0.15, 0.15).into(),
-//                 ..default()
-//             })
-//             .with_children(|parent| {
-//                 parent.spawn(TextBundle::from_section(
-//                     "Play",
-//                     TextStyle {
-//                         font: asset_server.load("fonts/DungGeunMo.ttf"),
-//                         font_size: 40.0,
-//                         color: Color::rgb(0.9, 0.9, 0.9),
-//                         ..default()
-//                     },
-//                 ));
-//             });
-//     })
-//     .id();
+// if buttons.pressed(MouseButton::Left) {
+//     let s = story.0.clone();
+//     println!("{:?}", s);
+// }

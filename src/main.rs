@@ -7,6 +7,7 @@ use bevy::{
 };
 use dotenv::dotenv;
 
+mod character;
 mod config;
 mod main_story_text;
 mod progress_status;
@@ -51,6 +52,7 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, next_text)
         .add_systems(Update, pre_text)
+        .add_systems(Update, show_text)
         .run();
 }
 
@@ -193,21 +195,12 @@ fn next_text(
                 *color = PRESSED_BUTTON.into();
                 border_color.0 = Color::RED;
 
-                let text = story_text
-                    .0
-                    .get(&progress.main_story)
-                    .expect("main story not found");
-                println!("press next button");
-                for mut textbox in &mut textbox {
-                    textbox.0.sections[0].value = text[progress.main_story_progress].clone();
-                }
-
                 // TODO: 삭제
-                if progress.main_story_progress == text.len() - 1 as usize {
-                    progress.main_story_progress = text.len() - 1;
-                } else {
-                    progress.main_story_progress += 1;
-                }
+                // if progress.main_story_progress == text.len() - 1 as usize {
+                //     progress.main_story_progress = text.len() - 1;
+                // } else {
+                progress.main_story_progress += 1;
+                // }
             }
             Interaction::Hovered => {
                 *color = NORMAL_BUTTON.into();
@@ -222,7 +215,6 @@ fn next_text(
 }
 
 fn pre_text(
-    story_text: Res<main_story_text::GlobalStoryText>,
     mut progress: ResMut<progress_status::ProgressStatus>,
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor, &mut BorderColor),
@@ -235,15 +227,6 @@ fn pre_text(
             Interaction::Pressed => {
                 *color = PRESSED_BUTTON.into();
                 border_color.0 = Color::RED;
-
-                let text = story_text
-                    .0
-                    .get(&progress.main_story)
-                    .expect("main story not found");
-                println!("press pre button");
-                for mut textbox in &mut textbox {
-                    textbox.0.sections[0].value = text[progress.main_story_progress].clone();
-                }
 
                 // TODO: 삭제
                 if progress.main_story_progress == 0 {
@@ -261,5 +244,20 @@ fn pre_text(
                 border_color.0 = Color::BLACK;
             }
         }
+    }
+}
+
+fn show_text(
+    story_text: Res<main_story_text::GlobalStoryText>,
+    progress: Res<progress_status::ProgressStatus>,
+    mut textbox: Query<(&mut Text, With<StoryText>)>,
+) {
+    let text = story_text
+        .0
+        .get(&progress.main_story)
+        .expect("main story not found");
+    println!("press pre button");
+    for mut textbox in &mut textbox {
+        textbox.0.sections[0].value = text[progress.main_story_progress].clone();
     }
 }

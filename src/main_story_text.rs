@@ -2,13 +2,21 @@ use bevy::prelude::*;
 use std::collections::BTreeMap;
 
 #[derive(Resource, Debug)]
-pub struct GlobalStoryText(pub BTreeMap<String, Vec<String>>);
+pub struct GlobalStoryText {
+    pub story: BTreeMap<String, Vec<String>>,
+    pub story_part: Vec<String>,
+}
 
 impl FromWorld for GlobalStoryText {
     #[allow(unused_variables)]
     fn from_world(world: &mut World) -> Self {
-        let mut main = BTreeMap::new();
+        let story_part = vec!["myunghun_001".to_string(), "jaeho_001".to_string()];
+
+        let mut story = BTreeMap::new();
+
+        // myunghun_001: 명훈 1화
         let myunghun_001_text = vec![
+            "<명훈>".to_string(),
             "\"으으.. 뭐야..\"".to_string(),
             "매서운 바람이 식은 땀을 훑으며 체온을 앗아가자, 찬 기운에 정신이 들었다.".to_string(),
             "오늘도 어김없이 코딩을 조지고 있던 와중에, 눈을 떠 보니 한 번도 본 적이 없던 광경이 내 눈에 들어왔다.".to_string(),
@@ -23,8 +31,15 @@ impl FromWorld for GlobalStoryText {
             "내 눈에 비치는 광경은 \'그게 농담이겠냐?\' 라고 놀리는 듯 했다.".to_string(),
         ];
 
-        main.insert("myunghun_001".to_string(), myunghun_001_text);
+        // jaeho_001: 재호 1화
+        let jaeho_001 = vec![
+            "<재호>".to_string(),
+            "나는 어렸을 때 부터 눈치가 꽤 빠른 편 이라고 생각해왔다.".to_string(),
+        ];
 
-        GlobalStoryText(main)
+        story.insert(story_part[0].clone(), myunghun_001_text);
+        story.insert(story_part[1].clone(), jaeho_001);
+
+        GlobalStoryText { story, story_part }
     }
 }

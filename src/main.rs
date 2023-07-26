@@ -18,10 +18,10 @@ enum GameState {
     Story,
     Select,
     Battle,
+    Menu,
 }
-
-const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
-const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
+#[derive(Component)]
+struct StoryText;
 
 fn main() {
     dotenv().ok();
@@ -46,13 +46,12 @@ fn main() {
                 }),
         )
         .init_resource::<main_story_text::GlobalStoryText>()
-        .init_resource::<progress_status::ProgressStatus>()
         .add_state::<GameState>()
         .add_plugins(FrameTimeDiagnosticsPlugin)
         .add_systems(Startup, setup)
+        .add_systems(PreUpdate, next_story_part)
         .add_systems(Update, next_text)
-        .add_systems(Update, pre_text)
-        .add_systems(Update, show_text)
+        .add_systems(FixedUpdate, show_text)
         .run();
 }
 
@@ -67,6 +66,12 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         font_size: 60.0,
         color: Color::WHITE,
     };
+
+    commands.insert_resource(progress_status::ProgressStatus {
+        story_part: "myunghun_001".to_string(),
+        current_part: 0,
+        text_progress: 0,
+    });
 
     // 메인 스토리 텍스트
     commands
@@ -86,10 +91,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             builder.spawn((
                 Text2dBundle {
                     text: Text {
-                        sections: vec![TextSection::new(
-                            "this text wraps in the boxasca ksucashci uas cuibasck1asuicgh",
-                            text_style.clone(),
-                        )],
+                        sections: vec![TextSection::new("", text_style.clone())],
                         alignment: TextAlignment::Left,
                         linebreak_behavior: BreakLineOn::WordBoundary,
                     },
@@ -102,162 +104,144 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 StoryText,
             ));
         });
-
-    // 앞으로 가기 버튼
-    commands
-        .spawn(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                ..default()
-            },
-            ..default()
-        })
-        .with_children(|parent| {
-            parent
-                .spawn((
-                    ButtonBundle {
-                        style: Style {
-                            width: Val::Px(config::WINDOW_WIDTH / 3.),
-                            height: Val::Px(config::WINDOW_HEIGHT / 10.),
-                            border: UiRect::all(Val::Px(1.0)),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
-                        border_color: BorderColor(Color::BLACK),
-                        background_color: NORMAL_BUTTON.into(),
-                        transform: Transform::from_xyz(
-                            config::WINDOW_WIDTH,
-                            config::WINDOW_HEIGHT,
-                            1.,
-                        ),
-                        ..default()
-                    },
-                    NextButton,
-                ))
-                .with_children(|parent| {
-                    parent.spawn(TextBundle::from_section("->", text_style.clone()));
-                });
-        })
-        // 뒤로 가기 버튼
-        .with_children(|parent| {
-            parent
-                .spawn((
-                    ButtonBundle {
-                        style: Style {
-                            width: Val::Px(config::WINDOW_WIDTH / 3.),
-                            height: Val::Px(config::WINDOW_HEIGHT / 10.),
-                            border: UiRect::all(Val::Px(1.0)),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
-                        border_color: BorderColor(Color::BLACK),
-                        background_color: NORMAL_BUTTON.into(),
-                        transform: Transform::from_translation(Vec3::new(
-                            -config::WINDOW_WIDTH / 3.,
-                            0.0,
-                            0.0,
-                        )),
-                        ..default()
-                    },
-                    PreButton,
-                ))
-                .with_children(|parent| {
-                    parent.spawn(TextBundle::from_section("<-", text_style.clone()));
-                });
-        });
 }
 
-#[derive(Component)]
-struct StoryText;
-
-#[derive(Component)]
-struct NextButton;
-#[derive(Component)]
-struct PreButton;
-
 fn next_text(
-    story_text: Res<main_story_text::GlobalStoryText>,
+    mouse: Res<Input<MouseButton>>,
     mut progress: ResMut<progress_status::ProgressStatus>,
-    mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, &mut BorderColor),
-        (Changed<Interaction>, With<Button>, With<NextButton>),
-    >,
-    mut textbox: Query<(&mut Text, With<StoryText>)>,
 ) {
-    for (interaction, mut color, mut border_color) in &mut interaction_query {
-        match *interaction {
-            Interaction::Pressed => {
-                *color = PRESSED_BUTTON.into();
-                border_color.0 = Color::RED;
-
-                // TODO: 삭제
-                // if progress.main_story_progress == text.len() - 1 as usize {
-                //     progress.main_story_progress = text.len() - 1;
-                // } else {
-                progress.main_story_progress += 1;
-                // }
-            }
-            Interaction::Hovered => {
-                *color = NORMAL_BUTTON.into();
-                border_color.0 = Color::BLACK;
-            }
-            Interaction::None => {
-                *color = NORMAL_BUTTON.into();
-                border_color.0 = Color::BLACK;
-            }
-        }
+    if mouse.just_released(MouseButton::Left) {
+        progress.text_progress += 1;
     }
 }
 
-fn pre_text(
+fn next_story_part(
     mut progress: ResMut<progress_status::ProgressStatus>,
-    mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, &mut BorderColor),
-        (Changed<Interaction>, With<Button>, With<PreButton>),
-    >,
-    mut textbox: Query<(&mut Text, With<StoryText>)>,
+    story: Res<main_story_text::GlobalStoryText>,
 ) {
-    for (interaction, mut color, mut border_color) in &mut interaction_query {
-        match *interaction {
-            Interaction::Pressed => {
-                *color = PRESSED_BUTTON.into();
-                border_color.0 = Color::RED;
+    let text_len = story
+        .story
+        .get(progress.story_part.as_str())
+        .expect("해당 스토리가 없습니다.")
+        .len();
 
-                // TODO: 삭제
-                if progress.main_story_progress == 0 {
-                    progress.main_story_progress = 0;
-                } else {
-                    progress.main_story_progress -= 1;
-                }
-            }
-            Interaction::Hovered => {
-                *color = NORMAL_BUTTON.into();
-                border_color.0 = Color::BLACK;
-            }
-            Interaction::None => {
-                *color = NORMAL_BUTTON.into();
-                border_color.0 = Color::BLACK;
-            }
+    if text_len == progress.text_progress {
+        // TODO: 버그 방지. 나중에 변경
+        if story.story.len() - 1 == progress.current_part {
+            progress.text_progress -= 1;
+        } else {
+            progress.text_progress = 0;
+            progress.story_part = story.story_part[progress.current_part + 1].clone();
         }
     }
 }
 
 fn show_text(
-    story_text: Res<main_story_text::GlobalStoryText>,
+    story: Res<main_story_text::GlobalStoryText>,
     progress: Res<progress_status::ProgressStatus>,
     mut textbox: Query<(&mut Text, With<StoryText>)>,
 ) {
-    let text = story_text
-        .0
-        .get(&progress.main_story)
-        .expect("main story not found");
-    println!("press pre button");
+    let text = story
+        .story
+        .get(progress.story_part.as_str())
+        .expect("해당 스토리가 없습니다.");
+
     for mut textbox in &mut textbox {
-        textbox.0.sections[0].value = text[progress.main_story_progress].clone();
+        textbox.0.sections[0].value = text[progress.text_progress].clone();
     }
 }
+
+// const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
+// const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
+
+// 앞으로 가기 버튼
+// commands
+//     .spawn(NodeBundle {
+//         style: Style {
+//             width: Val::Percent(100.0),
+//             height: Val::Percent(100.0),
+//             align_items: AlignItems::Center,
+//             justify_content: JustifyContent::Center,
+//             ..default()
+//         },
+//         transform: Transform::from_xyz(500., 500., 1.),
+//         ..default()
+//     })
+//     .with_children(|parent| {
+//         parent
+//             .spawn((
+//                 ButtonBundle {
+//                     style: Style {
+//                         width: Val::Px(config::WINDOW_WIDTH / 3.),
+//                         height: Val::Px(config::WINDOW_HEIGHT / 10.),
+//                         border: UiRect::all(Val::Px(1.0)),
+//                         justify_content: JustifyContent::Center,
+//                         align_items: AlignItems::Center,
+//                         ..default()
+//                     },
+//                     border_color: BorderColor(Color::BLACK),
+//                     background_color: NORMAL_BUTTON.into(),
+//                     transform: Transform::from_xyz(
+//                         config::WINDOW_WIDTH,
+//                         config::WINDOW_HEIGHT,
+//                         1.,
+//                     ),
+//                     ..default()
+//                 },
+//                 NextButton,
+//             ))
+//             .with_children(|parent| {
+//                 parent.spawn(TextBundle::from_section("->", text_style.clone()));
+//             });
+//     });
+
+// commands
+//     .spawn((
+//         ButtonBundle {
+//             style: Style {
+//                 width: Val::Px(config::WINDOW_WIDTH / 3.),
+//                 height: Val::Px(config::WINDOW_HEIGHT / 10.),
+//                 top: Val::Px(config::WINDOW_HEIGHT - 120.),
+//                 left: Val::Px(config::WINDOW_WIDTH - 260.),
+//                 border: UiRect::all(Val::Px(1.0)),
+//                 justify_content: JustifyContent::Center,
+//                 align_items: AlignItems::Center,
+//                 ..default()
+//             },
+//             border_color: BorderColor(Color::BLACK),
+//             background_color: NORMAL_BUTTON.into(),
+//             transform: Transform::from_xyz(500., 500., 1.),
+//             ..default()
+//         },
+//         NextButton,
+//     ))
+//     .with_children(|parent| {
+//         parent.spawn(TextBundle::from_section("->", text_style.clone()));
+//     });
+
+// fn next_text(
+//     mut progress: ResMut<progress_status::ProgressStatus>,
+//     mut interaction_query: Query<
+//         (&Interaction, &mut BackgroundColor, &mut BorderColor),
+//         (Changed<Interaction>, With<Button>, With<NextButton>),
+//     >,
+// ) {
+//     for (interaction, mut color, mut border_color) in &mut interaction_query {
+//         match *interaction {
+//             Interaction::Pressed => {
+//                 *color = PRESSED_BUTTON.into();
+//                 border_color.0 = Color::RED;
+
+//                 progress.text_progress += 1;
+//             }
+//             Interaction::Hovered => {
+//                 *color = NORMAL_BUTTON.into();
+//                 border_color.0 = Color::BLACK;
+//             }
+//             Interaction::None => {
+//                 *color = NORMAL_BUTTON.into();
+//                 border_color.0 = Color::BLACK;
+//             }
+//         }
+//     }
+// }

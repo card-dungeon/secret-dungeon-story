@@ -108,6 +108,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         });
 }
 
+fn pre_text() {}
+
 fn next_text(
     mouse: Res<Input<MouseButton>>,
     mut progress: ResMut<progress_status::ProgressStatus>,

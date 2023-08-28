@@ -52,6 +52,8 @@ fn main() {
         .add_systems(PreUpdate, next_story_part)
         .add_systems(Update, next_text)
         .add_systems(FixedUpdate, show_text)
+        .add_systems(OnEnter(GameState::Battle), start_battle)
+        .add_systems(OnExit(GameState::Battle), end_battle)
         .run();
 }
 
@@ -109,9 +111,15 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 fn next_text(
     mouse: Res<Input<MouseButton>>,
     mut progress: ResMut<progress_status::ProgressStatus>,
+    game_state: Res<State<GameState>>,
 ) {
-    if mouse.just_released(MouseButton::Left) {
-        progress.text_progress += 1;
+    match game_state.get() {
+        GameState::Story => {
+            if mouse.just_released(MouseButton::Left) {
+                progress.text_progress += 1;
+            }
+        }
+        _ => return,
     }
 }
 
@@ -150,6 +158,9 @@ fn show_text(
         textbox.0.sections[0].value = text[progress.text_progress].clone();
     }
 }
+
+fn start_battle() {}
+fn end_battle() {}
 
 // const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
 // const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);

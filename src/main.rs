@@ -108,7 +108,20 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         });
 }
 
-fn pre_text() {}
+fn pre_text(
+    mouse: Res<Input<MouseButton>>,
+    mut progress: ResMut<progress_status::ProgressStatus>,
+    game_state: Res<State<GameState>>,
+) {
+    match game_state.get() {
+        GameState::Story => {
+            if mouse.just_released(MouseButton::Left) {
+                progress.text_progress += 1;
+            }
+        }
+        _ => return,
+    }
+}
 
 fn next_text(
     mouse: Res<Input<MouseButton>>,

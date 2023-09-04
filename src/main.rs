@@ -1,14 +1,15 @@
-use std::time::Duration;
-
 use bevy::{
+    asset::ChangeWatcher,
     diagnostic::FrameTimeDiagnosticsPlugin,
     prelude::*,
     text::{BreakLineOn, Text2dBounds},
 };
 use dotenv::dotenv;
+use std::time::Duration;
 
 mod character;
 mod config;
+mod controller;
 mod main_story_text;
 mod progress_status;
 
@@ -39,15 +40,15 @@ fn main() {
                     ..default()
                 })
                 .set(AssetPlugin {
-                    watch_for_changes: Some(bevy::asset::ChangeWatcher {
-                        delay: Duration::from_secs(1),
-                    }),
+                    // You can now give it a configurable delay. This is a safe default.
+                    watch_for_changes: ChangeWatcher::with_delay(Duration::from_millis(2000)),
                     ..default()
                 }),
         )
         .init_resource::<main_story_text::GlobalStoryText>()
         .add_state::<GameState>()
         .add_plugins(FrameTimeDiagnosticsPlugin)
+        .add_plugins(controller::ControllerPlugin)
         .add_systems(Startup, setup)
         .add_systems(PreUpdate, next_story_part)
         .add_systems(Update, next_text)

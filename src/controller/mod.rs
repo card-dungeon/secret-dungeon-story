@@ -22,12 +22,12 @@ pub struct ControllerPlugin;
 
 impl Plugin for ControllerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<ClickPointEvent>()
-            .add_systems(PreUpdate, click_with_story);
+        // app.add_event::<ClickPointEvent>()
+        // .add_systems(PreUpdate, click_with_story);
     }
 }
 
-// #[cfg(target_os = "wasm32")]
+#[cfg(target_os = "wasm32")]
 fn click_with_story(
     windows: Query<&Window, With<PrimaryWindow>>,
     mouse: Res<Input<MouseButton>>,

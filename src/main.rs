@@ -107,6 +107,79 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 StoryText,
             ));
         });
+
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                justify_content: JustifyContent::SpaceBetween,
+                ..default()
+            },
+            ..default()
+        })
+        .with_children(|parent| {
+            parent
+                .spawn(NodeBundle {
+                    style: Style {
+                        width: Val::Px(150.0),
+                        height: Val::Px(100.0),
+                        position_type: PositionType::Relative,
+                        left: Val::Px(10.),
+                        top: Val::Px(config::WINDOW_HEIGHT - 110.),
+                        align_content: AlignContent::Center,
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        ..default()
+                    },
+                    background_color: Color::rgb(0.4, 0.4, 1.).into(),
+                    ..default()
+                })
+                .with_children(|parent| {
+                    parent.spawn(TextBundle {
+                        text: Text {
+                            sections: vec![TextSection {
+                                value: "<".to_string(),
+                                style: text_style.clone(),
+                            }],
+                            alignment: TextAlignment::Center,
+                            ..default()
+                        },
+                        ..default()
+                    });
+                });
+        })
+        .with_children(|parent| {
+            parent
+                .spawn(NodeBundle {
+                    style: Style {
+                        width: Val::Px(150.0),
+                        height: Val::Px(100.0),
+                        position_type: PositionType::Relative,
+                        left: Val::Px(config::WINDOW_WIDTH - 160.),
+                        top: Val::Px(config::WINDOW_HEIGHT - 110.),
+                        align_content: AlignContent::Center,
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        ..default()
+                    },
+                    background_color: Color::rgb(0.4, 0.4, 1.).into(),
+                    ..default()
+                })
+                .with_children(|parent| {
+                    parent.spawn(TextBundle {
+                        text: Text {
+                            sections: vec![TextSection {
+                                value: ">".to_string(),
+                                style: text_style.clone(),
+                            }],
+                            alignment: TextAlignment::Center,
+                            ..default()
+                        },
+                        ..default()
+                    });
+                });
+        });
 }
 
 fn pre_text(
